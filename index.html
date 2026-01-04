@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Relationship Timer</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      background: #0f0f14;
+      color: #eaeaf0;
+      display: flex;
+      justify-content: center;
+      padding: 40px;
+    }
+
+    .container {
+      background: #1a1a24;
+      padding: 24px 32px;
+      border-radius: 12px;
+      box-shadow: 0 0 25px rgba(0,0,0,0.4);
+      width: 420px;
+    }
+
+    h1, h2 {
+      text-align: center;
+      margin-bottom: 16px;
+    }
+
+    h2 {
+      margin-top: 28px;
+      font-size: 1.2em;
+      opacity: 0.9;
+    }
+
+    .stat {
+      margin: 8px 0;
+      font-size: 1.05em;
+      overflow: hidden;
+    }
+
+    .label {
+      opacity: 0.7;
+    }
+
+    .value {
+      font-weight: 600;
+      float: right;
+    }
+
+    .small {
+      font-size: 0.9em;
+      opacity: 0.75;
+      margin-top: 4px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>E & A's Relationship Timer</h1>
+
+  <div class="stat"><span class="label">Months</span><span class="value" id="months"></span></div>
+  <div class="stat"><span class="label">Weeks</span><span class="value" id="weeks"></span></div>
+  <div class="stat"><span class="label">Days</span><span class="value" id="days"></span></div>
+  <div class="stat"><span class="label">Minutes</span><span class="value" id="minutes"></span></div>
+  <div class="stat"><span class="label">Seconds</span><span class="value" id="seconds"></span></div>
+
+  <h2>Statistics</h2>
+
+  <div class="stat"><span class="label">Estimated Heartbeats Together</span><span class="value" id="heartbeats"></span></div>
+  <div class="stat"><span class="label">Estimated Blinks Together</span><span class="value" id="blinks"></span></div>
+
+  <div class="stat">
+    <span class="label">Most Recent 6833 / 3368 Second</span>
+    <span class="value" id="specialSecond"></span>
+    <div class="small" id="specialTime"></div>
+  </div>
+</div>
+
+<script>
+  // Start: Oct 20 2025, 12:49 PM MST (UTC−7 → 19:49 UTC)
+  const startUTC = Date.UTC(2025, 9, 20, 19, 49, 0);
+
+  let lastSpecial = null;
+  let lastSpecialTime = null;
+
+  function calculateMonths(start, end) {
+    const s = new Date(start);
+    const e = new Date(end);
+
+    let months =
+      (e.getUTCFullYear() - s.getUTCFullYear()) * 12 +
+      (e.getUTCMonth() - s.getUTCMonth());
+
+    if (e.getUTCDate() < s.getUTCDate()) months--;
+    return Math.max(0, months);
+  }
+
+  function findMostRecentSpecial(seconds) {
+    // Decrement until you find a number ending with 6833 or 3368
+    let s = seconds;
+    while (s >= 0) {
+      const sStr = s.toString();
+      if (sStr.endsWith("6833") || sStr.endsWith("3368")) return s;
+      s--;
+    }
+    return null;
+  }
+
+  function formatMST(date) {
+    // MST is UTC-7
+    const mst = new Date(date.getTime() - 7 * 60 * 60 * 1000);
+    return mst.toLocaleString("en-US", { timeZone: "UTC" }) + " MST";
+  }
+
+  function update() {
+    const now = Date.now();
+    const diffMs = now - startUTC;
+    if (diffMs < 0) return;
+
+    const seconds = Math.floor(diffMs / 1000);
+    const minutes = diffMs / 60000; // fractional minutes
+    const days = Math.floor(minutes / 1440);
+    const weeks = Math.floor(days / 7);
+    const months = calculateMonths(startUTC, now);
+
+    document.getElementById("seconds").textContent = seconds.toLocaleString();
+    document.getElementById("minutes").textContent = Math.floor(minutes).toLocaleString();
+    document.getElementById("days").textContent = days.toLocaleString();
+    document.getElementById("weeks").textContent = weeks.toLocaleString();
+    document.getElementById("months").textContent = months.toLocaleString();
+
+    // Heartbeats & blinks increment automatically
+    document.getElementById("heartbeats").textContent =
+      Math.floor(minutes * 155).toLocaleString();
+
+    document.getElementById("blinks").textContent =
+      Math.floor(minutes * 23).toLocaleString();
+
+    // Most recent special second
+    const special = findMostRecentSpecial(seconds);
+    if (special !== null) {
+      lastSpecial = special;
+      lastSpecialTime = new Date(startUTC + special * 1000);
+      document.getElementById("specialSecond").textContent = lastSpecial.toLocaleString();
+      document.getElementById("specialTime").textContent =
+        "at " + formatMST(lastSpecialTime);
+    }
+  }
+
+  update();
+  setInterval(update, 1000);
+</script>
+
+</body>
+</html>
